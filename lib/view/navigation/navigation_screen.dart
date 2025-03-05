@@ -1,6 +1,11 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
+import 'package:music/controller/peofile_controller.dart';
 import 'package:music/view/navigation/category_screen.dart';
 import 'package:music/view/navigation/faveroite_screen.dart';
 import 'package:music/view/navigation/home_screen.dart';
@@ -16,6 +21,7 @@ class NavigationScreen extends StatefulWidget {
 }
 
 class _NavigationScreenState extends State<NavigationScreen> {
+  ProfileController profileController = Get.find();
   int currentPage = 2;
   final List<Widget> pages = [
     FavoriteMusicScreen(),
@@ -27,6 +33,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    log("Profile: ${profileController.profile}");
     return Scaffold(
       backgroundColor: const Color.fromRGBO(19, 19, 19, 1),
       body: pages[currentPage],

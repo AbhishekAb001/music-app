@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:music/controller/peofile_controller.dart';
+import 'package:music/service/auth_service.dart';
 import 'login_screen.dart'; // Import the login screen
 
 class SignupScreen extends StatefulWidget {
@@ -156,9 +159,7 @@ class _SignupScreenState extends State<SignupScreen>
                           height: MediaQuery.of(context).size.width * 0.06,
                         ),
                         GestureDetector(
-                          onTap: () {
-                            // Handle sign-up logic here
-                          },
+                          onTap: signUp,
                           child: Container(
                             padding: EdgeInsets.symmetric(
                               vertical:
@@ -194,12 +195,7 @@ class _SignupScreenState extends State<SignupScreen>
                         ),
                         GestureDetector(
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const LoginScreen(),
-                              ),
-                            );
+                            Get.offAll(() => const LoginScreen());
                           },
                           child: Text(
                             "Already have an account? Login",
@@ -221,5 +217,58 @@ class _SignupScreenState extends State<SignupScreen>
         ],
       ),
     );
+  }
+
+  void signUp() async{
+    if (_emailController.text.isNotEmpty &&
+        _passwordController.text.isNotEmpty &&
+        _nameController.text.isNotEmpty) {
+          if(await AuthService().createUserByEmailAndPass(_emailController.text, _passwordController.text,_nameController.text)){
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                backgroundColor: Colors.green,
+                content: Text(
+                  "Account created successfully",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: MediaQuery.of(context).size.width * 0.04,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            );
+            Future.delayed(const Duration(seconds: 2), () {
+              Get.offAll(() => const LoginScreen());
+            });
+          }else{
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                backgroundColor: Colors.red,
+                content: Text(
+                  "Failed to create account",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: MediaQuery.of(context).size.width * 0.04,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            );
+          }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            "Please fill all the fields",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: MediaQuery.of(context).size.width * 0.04,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      );
+    }
   }
 }

@@ -1,5 +1,12 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:music/controller/peofile_controller.dart';
+import 'package:music/service/auth_service.dart';
+import 'package:music/service/profile_cloud_service.dart';
+import 'package:music/service/shered_prefrence_service.dart';
+import 'package:music/view/navigation/navigation_screen.dart';
 import 'package:music/view/users/login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -14,6 +21,7 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+  ProfileController controller = Get.put(ProfileController());
 
   @override
   void initState() {
@@ -39,8 +47,24 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
+  void _checkLogin() async {
+    bool isLoggedIn = await SharedPreferenceService.getIsLogin();
+    String? uid = await SharedPreferenceService.getUid();
+    if (isLoggedIn) {
+      if (uid!.isNotEmpty) {
+        ProfileCloudService().getUserDetails(uid).then((value) {
+          controller.setProfile(value!);
+        });
+        Get.offAll(NavigationScreen());
+      } else {
+        Get.offAll(LoginScreen());
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    _checkLogin();
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
@@ -115,24 +139,29 @@ class _SplashScreenState extends State<SplashScreen>
                       SizedBox(
                         height: MediaQuery.of(context).size.width * 0.04,
                       ),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          vertical: MediaQuery.of(context).size.width * 0.04,
-                          horizontal: MediaQuery.of(context).size.width * 0.15,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(30),
-                          border: Border.all(
-                            color: const Color.fromRGBO(255, 46, 0, 1),
-                            width: 2,
+                      GestureDetector(
+                        onTap: signupWithGoogle,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            vertical: MediaQuery.of(context).size.width * 0.04,
+                            horizontal:
+                                MediaQuery.of(context).size.width * 0.15,
                           ),
-                        ),
-                        child: Text(
-                          "Continue with Email",
-                          style: GoogleFonts.inter(
-                            fontSize: MediaQuery.of(context).size.width * 0.055,
-                            color: const Color.fromRGBO(255, 46, 0, 1),
-                            fontWeight: FontWeight.w600,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(
+                              color: const Color.fromRGBO(255, 46, 0, 1),
+                              width: 2,
+                            ),
+                          ),
+                          child: Text(
+                            "Continue with Email",
+                            style: GoogleFonts.inter(
+                              fontSize:
+                                  MediaQuery.of(context).size.width * 0.055,
+                              color: const Color.fromRGBO(255, 46, 0, 1),
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),
@@ -157,5 +186,43 @@ class _SplashScreenState extends State<SplashScreen>
         ],
       ),
     );
+  }
+
+  void signupWithGoogle() async {
+    UserCredential? user = await AuthService().createUserByGoogle();
+    if (user != null) {
+      ProfileCloudService().getUserDetails(user.user!.uid).then((value) {
+        controller.setProfile(value!);
+      });
+      SharedPreferenceService.setLoginPref(user.user!.uid, true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color.fromARGB(255, 77, 86, 79),
+          content: Text(
+            "Signed up successfully",
+            style: GoogleFonts.inter(
+              fontSize: MediaQuery.of(context).size.width * 0.04,
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      );
+      Get.offAll(NavigationScreen());
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color.fromRGBO(255, 46, 0, 1),
+          content: Text(
+            "An error occurred while signing up",
+            style: GoogleFonts.inter(
+              fontSize: MediaQuery.of(context).size.width * 0.04,
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      );
+    }
   }
 }

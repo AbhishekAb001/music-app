@@ -1,7 +1,13 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:music/controller/peofile_controller.dart';
+import 'package:music/service/auth_service.dart';
+import 'package:music/service/profile_cloud_service.dart';
+import 'package:music/service/shered_prefrence_service.dart';
 import 'package:music/view/navigation/navigation_screen.dart';
-import 'signup_screen.dart'; // Import the sign-up screen
+import 'package:music/view/users/signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,6 +24,8 @@ class _LoginScreenState extends State<LoginScreen>
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  ProfileController controller = Get.find();
 
   @override
   void initState() {
@@ -131,14 +139,7 @@ class _LoginScreenState extends State<LoginScreen>
                           height: MediaQuery.of(context).size.width * 0.06,
                         ),
                         GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const NavigationScreen(),
-                              ),
-                            );
-                          },
+                          onTap: login,
                           child: Container(
                             padding: EdgeInsets.symmetric(
                               vertical:
@@ -174,12 +175,7 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                         GestureDetector(
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const SignupScreen(),
-                              ),
-                            );
+                            Get.to(SignupScreen());
                           },
                           child: Text(
                             "Don't have an account? Sign Up",
@@ -201,5 +197,65 @@ class _LoginScreenState extends State<LoginScreen>
         ],
       ),
     );
+  }
+
+  void login() async {
+    if (_emailController.text.isNotEmpty &&
+        _passwordController.text.isNotEmpty) {
+      UserCredential? user = await AuthService().signInByEmailAndPass(
+        _emailController.text,
+        _passwordController.text,
+      );
+      if (user != null) {
+        Map<String, dynamic>? userInfo = await ProfileCloudService()
+            .getUserDetails(user.user!.uid);
+          SharedPreferenceService.setLoginPref(user.user!.uid, true);
+        controller.setProfile(userInfo!);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.green,
+            content: Text(
+              "Login successful",
+              style: GoogleFonts.inter(
+                fontSize: MediaQuery.of(context).size.width * 0.04,
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        );
+        Future.delayed(const Duration(seconds: 2), () {
+          Get.offAll(() => NavigationScreen());
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              "Invalid email or password",
+              style: GoogleFonts.inter(
+                fontSize: MediaQuery.of(context).size.width * 0.04,
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            "Please fill in all fields",
+            style: GoogleFonts.inter(
+              fontSize: MediaQuery.of(context).size.width * 0.04,
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      );
+    }
   }
 }
