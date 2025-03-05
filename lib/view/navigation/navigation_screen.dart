@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:music/view/navigation/category_screen.dart';
+import 'package:music/view/navigation/faveroite_screen.dart';
 import 'package:music/view/navigation/home_screen.dart';
 import 'package:music/view/navigation/music_screen.dart';
 import 'package:music/view/navigation/profile_screen.dart';
@@ -17,7 +18,7 @@ class NavigationScreen extends StatefulWidget {
 class _NavigationScreenState extends State<NavigationScreen> {
   int currentPage = 2;
   final List<Widget> pages = [
-    HomeScreen(),
+    FavoriteMusicScreen(),
     MusicSearchScreen(),
     HomeScreen(),
     MusicCategoryScreen(),

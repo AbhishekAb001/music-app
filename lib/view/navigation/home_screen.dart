@@ -278,7 +278,36 @@ class _HomeScreenState extends State<HomeScreen>
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const MusicScreen(),
+                        builder:
+                            (context) => MusicPlayerScreen(
+                              initialIndex: 0,
+                              playlist: [
+                                {
+                                  "title": "Blinding Lights",
+                                  "artist": "The Weeknd",
+                                  "imageUrl":
+                                      "https://upload.wikimedia.org/wikipedia/en/e/e6/The_Weeknd_-_Blinding_Lights.png",
+                                  "audioUrl":
+                                      "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+                                },
+                                {
+                                  "title": "Shape of You",
+                                  "artist": "Ed Sheeran",
+                                  "imageUrl":
+                                      "https://upload.wikimedia.org/wikipedia/en/4/45/Divide_cover.png",
+                                  "audioUrl":
+                                      "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+                                },
+                                {
+                                  "title": "Memories",
+                                  "artist": "Maroon 5",
+                                  "imageUrl":
+                                      "https://upload.wikimedia.org/wikipedia/en/4/49/Maroon_5_-_Memories.png",
+                                  "audioUrl":
+                                      "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+                                },
+                              ],
+                            ),
                       ),
                     );
                   },
