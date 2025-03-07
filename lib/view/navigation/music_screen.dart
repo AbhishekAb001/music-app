@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:music/service/music_service.dart';
 
 class MusicPlayerScreen extends StatefulWidget {
-  final List<Map<String, String>> playlist;
+  final List<Map<dynamic, dynamic>> playlist;
   final int initialIndex;
 
   const MusicPlayerScreen({
@@ -32,7 +33,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
   }
 
   void _initializePlayer() async {
-    await _audioPlayer.setUrl(widget.playlist[currentIndex]["audioUrl"]!);
+    await _audioPlayer.setUrl(widget.playlist[currentIndex]["fileUrl"]!);
     _audioPlayer.playerStateStream.listen((state) {
       if (state.processingState == ProcessingState.completed) {
         _handleSongCompletion();
@@ -110,9 +111,13 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         backgroundColor: Colors.black,
         title: Text(
-          currentSong["title"]!,
+          currentSong["songName"] ?? "Unknown Title",
           style: GoogleFonts.inter(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -134,7 +139,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: NetworkImage(currentSong["imageUrl"]!),
+                  image: NetworkImage(currentSong["url"]!),
                   fit: BoxFit.cover,
                 ),
                 boxShadow: [
@@ -150,7 +155,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
 
             // Song Title & Artist
             Text(
-              currentSong["title"]!,
+              currentSong["songName"] ?? "Unknown Title",
               style: GoogleFonts.inter(
                 fontSize: screenWidth * 0.06,
                 fontWeight: FontWeight.bold,
@@ -158,7 +163,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
               ),
             ),
             Text(
-              currentSong["artist"]!,
+              currentSong["artist"] ?? "Unknown Artist",
               style: GoogleFonts.inter(
                 fontSize: screenWidth * 0.04,
                 color: Colors.white70,

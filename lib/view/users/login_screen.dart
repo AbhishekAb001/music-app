@@ -1,9 +1,14 @@
+import 'dart:developer';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:music/controller/peofile_controller.dart';
 import 'package:music/service/auth_service.dart';
+import 'package:music/service/music_service.dart';
 import 'package:music/service/profile_cloud_service.dart';
 import 'package:music/service/shered_prefrence_service.dart';
 import 'package:music/view/navigation/navigation_screen.dart';
@@ -26,6 +31,7 @@ class _LoginScreenState extends State<LoginScreen>
   final TextEditingController _passwordController = TextEditingController();
 
   ProfileController controller = Get.find();
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -159,15 +165,29 @@ class _LoginScreenState extends State<LoginScreen>
                                 ),
                               ],
                             ),
-                            child: Text(
-                              "Login",
-                              style: GoogleFonts.inter(
-                                fontSize:
-                                    MediaQuery.of(context).size.width * 0.055,
-                                color: Colors.black,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            child:
+                                (isLoading)
+                                    ? LoadingAnimationWidget.staggeredDotsWave(
+                                      color: const Color.fromARGB(
+                                        255,
+                                        171,
+                                        58,
+                                        58,
+                                      ),
+                                      size:
+                                          MediaQuery.of(context).size.width *
+                                          0.1,
+                                    )
+                                    : Text(
+                                      "Login",
+                                      style: GoogleFonts.inter(
+                                        fontSize:
+                                            MediaQuery.of(context).size.width *
+                                            0.055,
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                           ),
                         ),
                         SizedBox(
@@ -187,6 +207,40 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                           ),
                         ),
+                        SizedBox(
+                          height: MediaQuery.of(context).size.width * 0.08,
+                        ),
+                        Text(
+                          "------ Or login with ------",
+                          style: GoogleFonts.inter(
+                            fontSize: MediaQuery.of(context).size.width * 0.03,
+                            color: const Color.fromARGB(188, 255, 255, 255),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(
+                          height: MediaQuery.of(context).size.width * 0.04,
+                        ),
+                        SizedBox(
+                          height: MediaQuery.of(context).size.width * 0.04,
+                        ),
+                        GestureDetector(
+                          onTap: signupWithGoogle,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: const Color.fromRGBO(255, 46, 0, 1),
+                                width: 2,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.g_mobiledata,
+                              color: const Color.fromRGBO(255, 46, 0, 1),
+                              size: MediaQuery.of(context).size.width * 0.15,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -199,9 +253,60 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
+  void signupWithGoogle() async {
+    setState(() {
+      isLoading = true;
+    });
+    UserCredential? user = await AuthService().createUserByGoogle();
+    if (user != null) {
+      ProfileCloudService().getUserDetails(user.user!.uid).then((value) {
+        controller.setProfile(value!);
+      });
+      SharedPreferenceService.setLoginPref(user.user!.uid, true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color.fromARGB(255, 77, 86, 79),
+          content: Text(
+            "Signed up successfully",
+            style: GoogleFonts.inter(
+              fontSize: MediaQuery.of(context).size.width * 0.04,
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      );
+      _fetchMusics();
+      setState(() {
+        isLoading = false;
+      });
+      Get.offAll(NavigationScreen());
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color.fromRGBO(255, 46, 0, 1),
+          content: Text(
+            "An error occurred while signing up",
+            style: GoogleFonts.inter(
+              fontSize: MediaQuery.of(context).size.width * 0.04,
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      );
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
   void login() async {
     if (_emailController.text.isNotEmpty &&
         _passwordController.text.isNotEmpty) {
+      setState(() {
+        isLoading = true;
+      });
       UserCredential? user = await AuthService().signInByEmailAndPass(
         _emailController.text,
         _passwordController.text,
@@ -209,7 +314,7 @@ class _LoginScreenState extends State<LoginScreen>
       if (user != null) {
         Map<String, dynamic>? userInfo = await ProfileCloudService()
             .getUserDetails(user.user!.uid);
-          SharedPreferenceService.setLoginPref(user.user!.uid, true);
+        SharedPreferenceService.setLoginPref(user.user!.uid, true);
         controller.setProfile(userInfo!);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -224,6 +329,10 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           ),
         );
+        _fetchMusics();
+        setState(() {
+          isLoading = false;
+        });
         Future.delayed(const Duration(seconds: 2), () {
           Get.offAll(() => NavigationScreen());
         });
@@ -241,6 +350,9 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           ),
         );
+        setState(() {
+          isLoading = false;
+        });
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -256,6 +368,16 @@ class _LoginScreenState extends State<LoginScreen>
           ),
         ),
       );
+    }
+  }
+
+  void _fetchMusics() async {
+    try {
+      Box box = await Hive.openBox("musics");
+      var musics = await MusicService().fetchAllMusics();
+      await box.put("musics", musics);
+    } catch (e) {
+      log("Error fetching musics: $e");
     }
   }
 }

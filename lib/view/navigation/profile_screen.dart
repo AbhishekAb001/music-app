@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:music/controller/peofile_controller.dart';
+import 'package:music/service/shered_prefrence_service.dart';
+import 'package:music/view/users/login_screen.dart';
 
 class MusicProfileScreen extends StatelessWidget {
-  const MusicProfileScreen({super.key});
+  MusicProfileScreen({super.key});
 
+  ProfileController controller = Get.find();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-           backgroundColor: Colors.black,
+      backgroundColor: Colors.black,
       body: Padding(
         padding: EdgeInsets.symmetric(
           horizontal: MediaQuery.of(context).size.width * 0.05,
@@ -16,15 +21,19 @@ class MusicProfileScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            CircleAvatar(
-              radius: MediaQuery.of(context).size.width * 0.18,
-              backgroundImage: NetworkImage(
-                "https://i.scdn.co/image/ab6761610000e5eb4115b2a220be6f4a49f52466", // Example artist image
+            GestureDetector(
+              onTap: () {
+                SharedPreferenceService.setLoginPref("", false);
+                Get.offAll(LoginScreen());
+              },
+              child: CircleAvatar(
+                radius: MediaQuery.of(context).size.width * 0.18,
+                backgroundImage: Image.asset("assets/avatar.jpg").image,
               ),
             ),
             SizedBox(height: MediaQuery.of(context).size.width * 0.04),
             Text(
-              "Artist Name",
+              controller.profile['name'] ?? "Artist Name",
               style: GoogleFonts.inter(
                 fontSize: MediaQuery.of(context).size.width * 0.06,
                 fontWeight: FontWeight.w700,

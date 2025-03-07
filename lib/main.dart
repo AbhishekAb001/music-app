@@ -1,6 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:music/service/music_upload_service.dart';
 import 'package:music/view/users/splash_screen.dart';
 
 void main() async {
@@ -15,6 +17,8 @@ void main() async {
       storageBucket: "portfolio-my-20e16.firebasestorage.app",
     ),
   );
+  await Hive.initFlutter();
+  await Hive.openBox("musics");
 
   runApp(const MainApp());
 }
