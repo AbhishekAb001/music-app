@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:music/view/navigation/music_screen.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class CarouselSliderEffect extends StatefulWidget {
@@ -100,13 +102,30 @@ class _CarouselSliderEffectState extends State<CarouselSliderEffect>
                         ),
                       ),
                       SizedBox(
+                        height: MediaQuery.of(context).size.width * 0.02,
+                      ),
+                      Text(
+                        widget.carouselSongs[index]["artist"]!,
+                        style: GoogleFonts.inter(
+                          fontSize: MediaQuery.of(context).size.width * 0.04,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(
                         height: MediaQuery.of(context).size.width * 0.04,
                       ),
                       FadeTransition(
                         opacity: _fadeAnimation,
                         child: InkWell(
                           onTap: () {
-                            // Play button action
+                            Get.to(
+                              MusicPlayerScreen(
+                                initialIndex: index,
+                                playlist: widget.carouselSongs,
+                              ),
+                              transition: Transition.downToUp,
+                            );
                           },
                           child: Container(
                             padding: EdgeInsets.all(

@@ -1,5 +1,9 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:music/controller/music_controller.dart';
 
 class MusicSearchScreen extends StatefulWidget {
   const MusicSearchScreen({super.key});
@@ -10,10 +14,20 @@ class MusicSearchScreen extends StatefulWidget {
 
 class _MusicSearchScreenState extends State<MusicSearchScreen> {
   TextEditingController searchController = TextEditingController();
-  List<Map<String, dynamic>> filteredSongs = List.from(musicData);
+  List<Map<dynamic, dynamic>> filteredSongs = [];
+  late List<Map<dynamic, dynamic>> musicData = [];
+  MusicController musicController = Get.find();
+  bool isSearching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    musicData = musicController.getAllMusic;
+  }
 
   void _filterSongs(String query) {
     setState(() {
+      isSearching = true; // Start the searching animation
       filteredSongs =
           musicData
               .where(
@@ -26,6 +40,7 @@ class _MusicSearchScreenState extends State<MusicSearchScreen> {
                     ),
               )
               .toList();
+      isSearching = false; // End the searching animation
     });
   }
 
@@ -68,108 +83,72 @@ class _MusicSearchScreenState extends State<MusicSearchScreen> {
             ),
           ),
           Expanded(
-            child:
-                filteredSongs.isEmpty
-                    ? const Center(
-                      child: Text(
-                        "No songs found",
-                        style: TextStyle(color: Colors.white54, fontSize: 16),
-                      ),
-                    )
-                    : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 15),
-                      itemCount: filteredSongs.length,
-                      itemBuilder: (context, index) {
-                        var song = filteredSongs[index];
-                        return Card(
-                          color: Colors.black,
-                          margin: const EdgeInsets.symmetric(
-                            vertical: 8,
-                            horizontal: 5,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: ListTile(
-                            leading: Image.network(
-                              song['url'],
-                              width: 50,
-                              height: 50,
-                              fit: BoxFit.cover,
+            child: AnimatedOpacity(
+              opacity: isSearching ? 0.5 : 1.0,
+              duration: const Duration(milliseconds: 500),
+              child:
+                  filteredSongs.isEmpty
+                      ? const Center(
+                        child: Text(
+                          "No songs found",
+                          style: TextStyle(color: Colors.white54, fontSize: 16),
+                        ),
+                      )
+                      : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 15),
+                        itemCount: filteredSongs.length,
+                        itemBuilder: (context, index) {
+                          var song = filteredSongs[index];
+                          return Card(
+                            color: Colors.black,
+                            margin: const EdgeInsets.symmetric(
+                              vertical: 8,
+                              horizontal: 5,
                             ),
-                            title: Text(
-                              song['songName'],
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            subtitle: Text(
-                              "${song['category']} • ${song['duration']}",
-                              style: const TextStyle(
-                                color: Colors.white54,
-                                fontSize: 14,
+                            child: ListTile(
+                              leading: Image.network(
+                                song['url'],
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
                               ),
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(
-                                Icons.play_arrow,
-                                color: Colors.white,
+                              title: Text(
+                                song['songName'],
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
                               ),
-                              onPressed: () {
-                                // Handle song play
+                              subtitle: Text(
+                                "${song['category']} • ${song['duration']}",
+                                style: const TextStyle(
+                                  color: Colors.white54,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(
+                                  Icons.play_arrow,
+                                  color: Colors.white,
+                                ),
+                                onPressed: () {
+                                  // Handle song play
+                                },
+                              ),
+                              onTap: () {
+                                // Handle song selection
                               },
                             ),
-                            onTap: () {
-                              // Handle song selection
-                            },
-                          ),
-                        );
-                      },
-                    ),
+                          );
+                        },
+                      ),
+            ),
           ),
         ],
       ),
     );
   }
 }
-
-// Sample Music Data
-List<Map<String, dynamic>> musicData = [
-  {
-    "songName": "Agar Tum Saath Ho - Tamasha",
-    "duration": "5:41",
-    "fileUrl":
-        "https://firebasestorage.googleapis.com/v0/b/portfolio-my-20e16.firebasestorage.app/o/music%2FSad%2FAgar%20Tum%20Saath%20Ho%20-%20Tamasha%20128%20Kbps.mp3?alt=media",
-    "category": "Sad",
-    "url":
-        "https://firebasestorage.googleapis.com/v0/b/portfolio-my-20e16.firebasestorage.app/o/musicImages%2F1741278896258.jpg?alt=media",
-  },
-  {
-    "songName": "Bhula Dena - Aashiqui 2",
-    "duration": "4:00",
-    "fileUrl":
-        "https://firebasestorage.googleapis.com/v0/b/portfolio-my-20e16.firebasestorage.app/o/music%2FSad%2FBhula%20Dena%20-%20Aashiqui%202%20128%20Kbps.mp3?alt=media",
-    "category": "Sad",
-    "url":
-        "https://firebasestorage.googleapis.com/v0/b/portfolio-my-20e16.firebasestorage.app/o/musicImages%2F1741278892269.jpg?alt=media",
-  },
-  {
-    "songName": "Alan Walker - Faded",
-    "duration": "3:32",
-    "fileUrl":
-        "https://firebasestorage.googleapis.com/v0/b/portfolio-my-20e16.firebasestorage.app/o/music%2FPop%2FAlan_Walker_-_Faded.mp3?alt=media",
-    "category": "Pop",
-    "url":
-        "https://firebasestorage.googleapis.com/v0/b/portfolio-my-20e16.firebasestorage.app/o/musicImages%2F1741277677564.jpg?alt=media",
-  },
-  {
-    "songName": "Night Changes - One Direction",
-    "duration": "3:52",
-    "fileUrl":
-        "https://firebasestorage.googleapis.com/v0/b/portfolio-my-20e16.firebasestorage.app/o/music%2FPop%2FNight%20Changes%20English%20Full%20Mp3%20Song%20Download-BarmanMusic.Com.mp3?alt=media",
-    "category": "Pop",
-    "url":
-        "https://firebasestorage.googleapis.com/v0/b/portfolio-my-20e16.firebasestorage.app/o/musicImages%2F1741278082996.jpg?alt=media",
-  },
-];

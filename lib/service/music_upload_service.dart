@@ -131,98 +131,98 @@
 //   }
 // }
 
-// import 'dart:io';
-// import 'package:firebase_storage/firebase_storage.dart';
-// import 'package:flutter/material.dart';
-// import 'package:file_picker/file_picker.dart';
+import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 
-// class ImageUploadScreen extends StatefulWidget {
-//   @override
-//   _ImageUploadScreenState createState() => _ImageUploadScreenState();
-// }
+class ImageUploadScreen extends StatefulWidget {
+  @override
+  _ImageUploadScreenState createState() => _ImageUploadScreenState();
+}
 
-// class _ImageUploadScreenState extends State<ImageUploadScreen> {
-//   final FirebaseStorage _storage = FirebaseStorage.instance;
-//   bool _isUploading = false;
-//   List<String> _uploadedImages = [];
+class _ImageUploadScreenState extends State<ImageUploadScreen> {
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+  bool _isUploading = false;
+  List<String> _uploadedImages = [];
 
-//   Future<void> _pickAndUploadImages() async {
-//     FilePickerResult? result = await FilePicker.platform.pickFiles(
-//       type: FileType.image,
-//       allowMultiple: true,
-//     );
+  Future<void> _pickAndUploadImages() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: true,
+    );
 
-//     if (result != null && result.files.isNotEmpty) {
-//       setState(() => _isUploading = true);
+    if (result != null && result.files.isNotEmpty) {
+      setState(() => _isUploading = true);
 
-//       List<String> uploadedUrls = [];
+      List<String> uploadedUrls = [];
 
-//       for (var file in result.files) {
-//         File imageFile = File(file.path!);
+      for (var file in result.files) {
+        File imageFile = File(file.path!);
 
-//         try {
-//           String fileName = DateTime.now().millisecondsSinceEpoch.toString();
-//           Reference ref = _storage.ref().child("musicImages/$fileName.jpg");
-//           UploadTask uploadTask = ref.putFile(imageFile);
-//           TaskSnapshot snapshot = await uploadTask;
-//           String downloadUrl = await snapshot.ref.getDownloadURL();
+        try {
+          String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+          Reference ref = _storage.ref().child("category/$fileName.jpg");
+          UploadTask uploadTask = ref.putFile(imageFile);
+          TaskSnapshot snapshot = await uploadTask;
+          String downloadUrl = await snapshot.ref.getDownloadURL();
 
-//           uploadedUrls.add(downloadUrl);
-//         } catch (e) {
-//           print("Upload failed: $e");
-//           ScaffoldMessenger.of(
-//             context,
-//           ).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
-//         }
-//       }
+          uploadedUrls.add(downloadUrl);
+        } catch (e) {
+          print("Upload failed: $e");
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Upload failed: $e')));
+        }
+      }
 
-//       setState(() {
-//         _isUploading = false;
-//         _uploadedImages.addAll(uploadedUrls);
-//       });
+      setState(() {
+        _isUploading = false;
+        _uploadedImages.addAll(uploadedUrls);
+      });
 
-//       ScaffoldMessenger.of(
-//         context,
-//       ).showSnackBar(SnackBar(content: Text('Upload complete!')));
-//     }
-//   }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Upload complete!')));
+    }
+  }
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: Text("Upload & Display Images")),
-//       body: Column(
-//         children: [
-//           if (_isUploading) LinearProgressIndicator(),
-//           Padding(
-//             padding: EdgeInsets.all(10),
-//             child: ElevatedButton(
-//               onPressed: _pickAndUploadImages,
-//               child: Text("Select & Upload Images"),
-//             ),
-//           ),
-//           Expanded(
-//             child:
-//                 _uploadedImages.isEmpty
-//                     ? Center(child: Text("No images uploaded yet"))
-//                     : GridView.builder(
-//                       padding: EdgeInsets.all(10),
-//                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-//                         crossAxisCount: 3,
-//                         crossAxisSpacing: 10,
-//                         mainAxisSpacing: 10,
-//                       ),
-//                       itemCount: _uploadedImages.length,
-//                       itemBuilder: (context, index) {
-//                         return Image.network(
-//                           _uploadedImages[index],
-//                           fit: BoxFit.cover,
-//                         );
-//                       },
-//                     ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("Upload & Display Images")),
+      body: Column(
+        children: [
+          if (_isUploading) LinearProgressIndicator(),
+          Padding(
+            padding: EdgeInsets.all(10),
+            child: ElevatedButton(
+              onPressed: _pickAndUploadImages,
+              child: Text("Select & Upload Images"),
+            ),
+          ),
+          Expanded(
+            child:
+                _uploadedImages.isEmpty
+                    ? Center(child: Text("No images uploaded yet"))
+                    : GridView.builder(
+                      padding: EdgeInsets.all(10),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                      ),
+                      itemCount: _uploadedImages.length,
+                      itemBuilder: (context, index) {
+                        return Image.network(
+                          _uploadedImages[index],
+                          fit: BoxFit.cover,
+                        );
+                      },
+                    ),
+          ),
+        ],
+      ),
+    );
+  }
+}

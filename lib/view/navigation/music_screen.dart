@@ -1,8 +1,11 @@
+import 'dart:developer';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:music/service/music_service.dart';
+import 'package:just_audio_background/just_audio_background.dart';
+import 'package:music/controller/contorller.dart';
 
 class MusicPlayerScreen extends StatefulWidget {
   final List<Map<dynamic, dynamic>> playlist;
@@ -20,29 +23,64 @@ class MusicPlayerScreen extends StatefulWidget {
 
 class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
   final AudioPlayer _audioPlayer = AudioPlayer();
-  bool isPlaying = false;
-  bool isShuffled = false;
-  bool isRepeated = false;
+  Contorller controller = Get.find();
   int currentIndex = 0;
+  String? lastPlayedSongId;
+  bool isShuffling = false;
+  bool isRepeating = false;
 
   @override
   void initState() {
     super.initState();
     currentIndex = widget.initialIndex;
-    _initializePlayer();
-  }
 
-  void _initializePlayer() async {
-    await _audioPlayer.setUrl(widget.playlist[currentIndex]["fileUrl"]!);
-    _audioPlayer.playerStateStream.listen((state) {
-      if (state.processingState == ProcessingState.completed) {
-        _handleSongCompletion();
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializePlayer();
+      controller.togglePlaying(true);
+      controller.setSong(widget.playlist[currentIndex]);
     });
   }
 
+  void _initializePlayer() async {
+    String currentSongId = widget.playlist[currentIndex]["fileUrl"]!;
+
+    if (lastPlayedSongId == currentSongId && controller.isPlaying.value) {
+      return;
+    }
+
+    try {
+      await _audioPlayer.setAudioSource(
+        AudioSource.uri(
+          Uri.parse(widget.playlist[currentIndex]["fileUrl"]!),
+          tag: MediaItem(
+            id: currentIndex.toString(),
+            album: "My Playlist",
+            title: widget.playlist[currentIndex]["songName"] ?? "Unknown Title",
+            artist: widget.playlist[currentIndex]["artist"] ?? "Unknown Artist",
+            artUri: Uri.parse(widget.playlist[currentIndex]["url"]!),
+          ),
+        ),
+      );
+      _audioPlayer.play();
+
+      setState(() {
+        // 👈 Ensure UI updates with the new song
+        lastPlayedSongId = currentSongId;
+        controller.setSong(widget.playlist[currentIndex]);
+      });
+
+      _audioPlayer.playerStateStream.listen((state) {
+        if (state.processingState == ProcessingState.completed) {
+          _handleSongCompletion();
+        }
+      });
+    } catch (e) {
+      log("Error initializing player: $e");
+    }
+  }
+
   void _handleSongCompletion() {
-    if (isRepeated) {
+    if (isRepeating) {
       _audioPlayer.seek(Duration.zero);
       _audioPlayer.play();
     } else {
@@ -51,48 +89,45 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
   }
 
   void _togglePlayPause() {
-    if (isPlaying) {
+    if (controller.isPlaying.value) {
       _audioPlayer.pause();
     } else {
       _audioPlayer.play();
     }
-    setState(() {
-      isPlaying = !isPlaying;
-    });
+    controller.togglePlaying(!controller.isPlaying.value);
   }
 
   void _playNextSong() {
     setState(() {
-      currentIndex = (currentIndex + 1) % widget.playlist.length;
+      // 👈 Ensure UI refresh
+      if (isShuffling) {
+        currentIndex = (currentIndex + 1) % widget.playlist.length;
+      } else {
+        currentIndex = (currentIndex + 1) % widget.playlist.length;
+      }
     });
     _initializePlayer();
-    _audioPlayer.play();
-    setState(() {
-      isPlaying = true;
-    });
   }
 
   void _playPreviousSong() {
     setState(() {
+      // 👈 Ensure UI refresh
       currentIndex =
           currentIndex == 0 ? widget.playlist.length - 1 : currentIndex - 1;
     });
     _initializePlayer();
-    _audioPlayer.play();
-    setState(() {
-      isPlaying = true;
-    });
   }
 
   void _toggleShuffle() {
     setState(() {
-      isShuffled = !isShuffled;
+      isShuffling = !isShuffling;
+      _audioPlayer.setShuffleModeEnabled(isShuffling);
     });
   }
 
   void _toggleRepeat() {
     setState(() {
-      isRepeated = !isRepeated;
+      isRepeating = !isRepeating;
     });
   }
 
@@ -105,14 +140,12 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
   @override
   Widget build(BuildContext context) {
     var currentSong = widget.playlist[currentIndex];
-    double screenWidth = MediaQuery.of(context).size.width;
-    double screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
         backgroundColor: Colors.black,
@@ -128,56 +161,36 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
         elevation: 0,
       ),
       body: Padding(
-        padding: EdgeInsets.all(screenWidth * 0.05),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Album Image
-            Container(
-              width: screenWidth * 0.6,
-              height: screenWidth * 0.6,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                image: DecorationImage(
-                  image: NetworkImage(currentSong["url"]!),
-                  fit: BoxFit.cover,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.white.withOpacity(0.2),
-                    blurRadius: 10,
-                    spreadRadius: 2,
-                  ),
-                ],
-              ),
+            CircleAvatar(
+              radius: 100,
+              backgroundImage: NetworkImage(currentSong["url"]!),
             ),
             const SizedBox(height: 20),
-
-            // Song Title & Artist
             Text(
               currentSong["songName"] ?? "Unknown Title",
               style: GoogleFonts.inter(
-                fontSize: screenWidth * 0.06,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
             ),
             Text(
               currentSong["artist"] ?? "Unknown Artist",
-              style: GoogleFonts.inter(
-                fontSize: screenWidth * 0.04,
-                color: Colors.white70,
-              ),
+              style: GoogleFonts.inter(fontSize: 18, color: Colors.white70),
             ),
             const SizedBox(height: 20),
-
-            // Progress Bar
             StreamBuilder<Duration>(
               stream: _audioPlayer.positionStream,
               builder: (context, snapshot) {
+                final duration = _audioPlayer.duration ?? Duration.zero;
                 return ProgressBar(
                   progress: snapshot.data ?? Duration.zero,
-                  total: _audioPlayer.duration ?? Duration.zero,
+                  total:
+                      duration.inSeconds == 0 ? Duration(seconds: 1) : duration,
                   baseBarColor: Colors.grey[700]!,
                   progressBarColor: Colors.white,
                   thumbColor: Colors.red,
@@ -187,50 +200,50 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
               },
             ),
             const SizedBox(height: 20),
-
-            // Playback Controls
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 IconButton(
                   icon: Icon(
-                    Icons.shuffle,
-                    color: isShuffled ? Colors.red : Colors.white,
-                    size: screenWidth * 0.08,
+                    isShuffling ? Icons.shuffle_on : Icons.shuffle,
+                    color: Colors.white,
+                    size: 30,
                   ),
                   onPressed: _toggleShuffle,
                 ),
                 IconButton(
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.skip_previous,
                     color: Colors.white,
-                    size: screenWidth * 0.1,
+                    size: 40,
                   ),
                   onPressed: _playPreviousSong,
                 ),
-                IconButton(
-                  icon: Icon(
-                    isPlaying
-                        ? Icons.pause_circle_filled
-                        : Icons.play_circle_filled,
-                    color: Colors.red,
-                    size: screenWidth * 0.14,
+                Obx(
+                  () => IconButton(
+                    icon: Icon(
+                      controller.isPlaying.value
+                          ? Icons.pause_circle_filled
+                          : Icons.play_circle_filled,
+                      color: Colors.red,
+                      size: 60,
+                    ),
+                    onPressed: _togglePlayPause,
                   ),
-                  onPressed: _togglePlayPause,
                 ),
                 IconButton(
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.skip_next,
                     color: Colors.white,
-                    size: screenWidth * 0.1,
+                    size: 40,
                   ),
                   onPressed: _playNextSong,
                 ),
                 IconButton(
                   icon: Icon(
-                    Icons.repeat,
-                    color: isRepeated ? Colors.red : Colors.white,
-                    size: screenWidth * 0.08,
+                    isRepeating ? Icons.repeat_on : Icons.repeat,
+                    color: Colors.white,
+                    size: 30,
                   ),
                   onPressed: _toggleRepeat,
                 ),

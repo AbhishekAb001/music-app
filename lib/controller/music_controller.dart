@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 import 'dart:math';
 
 import 'package:get/get.dart';
@@ -19,7 +18,6 @@ class MusicController extends GetxController {
     for (int i = 1; i <= 4; i++) {
       randomMusic.add(music[i.toString()]);
     }
-    developer.log("musics $randomMusic");
     return randomMusic;
   }
 
@@ -43,7 +41,7 @@ class MusicController extends GetxController {
     return randomIndex;
   }
 
-  // Random music data 
+  // Random music data
   List<Map<dynamic, dynamic>> get getRandomMusics {
     List<Map<dynamic, dynamic>> randomMusics = [];
 
@@ -55,5 +53,16 @@ class MusicController extends GetxController {
     }
 
     return randomMusics;
+  }
+
+  List<Map<dynamic, dynamic>> getMusicByCategory(String category) {
+    List<Map<dynamic, dynamic>> musicByCategory = [];
+    final musics = getAllMusic;
+    for (int i = 0; i < musics.length; i++) {
+      if (musics[i]['category'] == category) {
+        musicByCategory.add(musics[i]);
+      }
+    }
+    return musicByCategory;
   }
 }

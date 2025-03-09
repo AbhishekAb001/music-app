@@ -259,9 +259,7 @@ class _LoginScreenState extends State<LoginScreen>
     });
     UserCredential? user = await AuthService().createUserByGoogle();
     if (user != null) {
-      ProfileCloudService().getUserDetails(user.user!.uid).then((value) {
-        controller.setProfile(value!);
-      });
+     
       SharedPreferenceService.setLoginPref(user.user!.uid, true);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -276,7 +274,9 @@ class _LoginScreenState extends State<LoginScreen>
           ),
         ),
       );
-      _fetchMusics();
+       ProfileCloudService().getUserDetails(user.user!.uid).then((value) {
+       _fetchMusics(value!);
+      });
       setState(() {
         isLoading = false;
       });
@@ -315,7 +315,6 @@ class _LoginScreenState extends State<LoginScreen>
         Map<String, dynamic>? userInfo = await ProfileCloudService()
             .getUserDetails(user.user!.uid);
         SharedPreferenceService.setLoginPref(user.user!.uid, true);
-        controller.setProfile(userInfo!);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.green,
@@ -329,7 +328,7 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           ),
         );
-        _fetchMusics();
+        _fetchMusics(userInfo!);
         setState(() {
           isLoading = false;
         });
@@ -371,11 +370,15 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
-  void _fetchMusics() async {
+  void _fetchMusics(Map<String,dynamic> user) async {
     try {
       Box box = await Hive.openBox("musics");
       var musics = await MusicService().fetchAllMusics();
+      var categories = await MusicService().fetchCategory();
+      
+      await box.put("categories", categories);
       await box.put("musics", musics);
+      await box.put("user", user);
     } catch (e) {
       log("Error fetching musics: $e");
     }

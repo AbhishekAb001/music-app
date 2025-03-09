@@ -1,20 +1,58 @@
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'dart:developer';
 
-class MusicCategoryScreen extends StatelessWidget {
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:music/controller/categories_controller.dart';
+import 'package:music/view/navigation/selected_category.dart';
+
+class MusicCategoryScreen extends StatefulWidget {
   const MusicCategoryScreen({super.key});
 
   @override
+  _MusicCategoryScreenState createState() => _MusicCategoryScreenState();
+}
+
+class _MusicCategoryScreenState extends State<MusicCategoryScreen> {
+  final CategoriesController categoriesController = Get.put(
+    CategoriesController(),
+  );
+  List<Map<dynamic, dynamic>> categories = [];
+
+  final List<IconData> icons = [
+    Icons.music_note,
+    Icons.party_mode,
+    Icons.library_music,
+    Icons.favorite,
+    Icons.sentiment_dissatisfied,
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchCategories();
+  }
+
+  void fetchCategories() async {
+    final fetchedCategories = categoriesController.fetchCategories();
+    setState(() {
+      categories = fetchedCategories;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF121212), // Dark theme
+      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: const Color(0xFF121212),
         title: Text(
           "Categories",
           style: GoogleFonts.inter(
-            fontSize: MediaQuery.of(context).size.width * 0.06,
+            fontSize: width * 0.06,
             fontWeight: FontWeight.w600,
             color: Colors.white,
           ),
@@ -22,25 +60,29 @@ class MusicCategoryScreen extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
       ),
-      body: Padding(
-        padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.05),
-        child: GridView.builder(
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: MediaQuery.of(context).size.width * 0.04,
-            mainAxisSpacing: MediaQuery.of(context).size.width * 0.04,
-            childAspectRatio: 0.85,
-          ),
-          itemCount: categories.length,
-          itemBuilder: (context, index) {
-            return MusicCategoryCard(
-              title: categories[index]['title'],
-              imageUrl: categories[index]['image'],
-              icon: categories[index]['icon'],
-            );
-          },
-        ),
-      ),
+      body:
+          categories.isEmpty
+              ? const Center(child: CircularProgressIndicator())
+              : Padding(
+                padding: EdgeInsets.all(width * 0.05),
+                child: GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: width * 0.04,
+                    mainAxisSpacing: width * 0.04,
+                    childAspectRatio: 0.85,
+                  ),
+                  itemCount: categories.length,
+                  itemBuilder: (context, index) {
+                    Map<dynamic, dynamic> category = categories[index];
+                    return MusicCategoryCard(
+                      title: category['name'] ?? "Unknown",
+                      imageUrl: category['url'] ?? "Unknown",
+                      icon: icons[index % icons.length],
+                    );
+                  },
+                ),
+              ),
     );
   }
 }
@@ -66,84 +108,80 @@ class _MusicCategoryCardState extends State<MusicCategoryCard> {
 
   @override
   Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width;
+
     return GestureDetector(
-      onTapDown: (_) {
-        setState(() {
-          isTapped = true;
-        });
-      },
-      onTapUp: (_) {
-        setState(() {
-          isTapped = false;
-        });
-      },
-      onTapCancel: () {
-        setState(() {
-          isTapped = false;
-        });
+      onTapDown: (_) => setState(() => isTapped = true),
+      onTapUp: (_) => setState(() => isTapped = false),
+      onTapCancel: () => setState(() => isTapped = false),
+      onTap: () {
+        Get.to(
+          () => SelectedCategory(category: widget.title, url: widget.imageUrl),
+        );
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
         transform:
             isTapped
-                ? Matrix4.identity().scaled(0.97) // Slight shrink on tap
+                ? Matrix4.identity().scaled(0.97)
                 : Matrix4.identity().scaled(1.0),
         decoration: BoxDecoration(
           color: Colors.black,
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(width * 0.04),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.7), // Stronger shadow for depth
-              blurRadius: 12,
-              offset: const Offset(4, 6),
+              color: Colors.black.withOpacity(0.7),
+              blurRadius: width * 0.03,
+              offset: Offset(width * 0.01, width * 0.02),
             ),
           ],
         ),
         child: Stack(
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(15),
-              child: FadeInImage.assetNetwork(
-                placeholder: 'assets/placeholder.jpg', // Local placeholder
-                image: widget.imageUrl,
+              borderRadius: BorderRadius.circular(width * 0.04),
+              child: Image.network(
+                widget.imageUrl,
                 width: double.infinity,
-                height: double.infinity,
                 fit: BoxFit.cover,
-                imageErrorBuilder:
-                    (context, error, stackTrace) => Image.asset(
-                      'assets/placeholder.jpg',
-                      fit: BoxFit.cover,
-                    ),
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Center(child: CircularProgressIndicator());
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return Image.asset(
+                    'assets/placeholder.jpg',
+                    fit: BoxFit.cover,
+                  );
+                },
               ),
             ),
             Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
+                borderRadius: BorderRadius.circular(width * 0.04),
                 gradient: LinearGradient(
-                  colors: [
-                    Colors.black.withOpacity(
-                      0.3,
-                    ), // Reduced opacity for clarity
-                    Colors.transparent,
-                  ],
+                  colors: [Colors.black.withOpacity(0.3), Colors.transparent],
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
                 ),
               ),
             ),
             Positioned(
-              top: 10,
-              left: 10,
-              child: Icon(widget.icon, color: Colors.white70, size: 30),
+              left: width * 0.03,
+              child: Icon(
+                widget.icon,
+                color: Colors.redAccent,
+                size: width * 0.08,
+              ),
             ),
             Positioned(
-              bottom: 15,
-              left: 15,
+              bottom: width * 0.1,
+              left: width * 0.03,
               child: Text(
                 widget.title,
                 style: GoogleFonts.inter(
-                  fontSize: MediaQuery.of(context).size.width * 0.045,
+                  fontSize: width * 0.045,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
                   shadows: [
@@ -162,43 +200,3 @@ class _MusicCategoryCardState extends State<MusicCategoryCard> {
     );
   }
 }
-
-// Music Categories Data
-List<Map<String, dynamic>> categories = [
-  {
-    "title": "Genres",
-    "image":
-        "https://wallpapers.com/images/featured/romance-pictures-9nus2ne9xefezvcs.jpg",
-    "icon": Icons.music_note,
-  },
-  {
-    "title": "Instruments",
-    "image":
-        "https://wallpapers.com/images/featured/romance-pictures-9nus2ne9xefezvcs.jpg",
-    "icon": Icons.piano,
-  },
-  {
-    "title": "Artists",
-    "image":
-        "https://wallpapers.com/images/featured/romance-pictures-9nus2ne9xefezvcs.jpg",
-    "icon": Icons.mic,
-  },
-  {
-    "title": "Albums",
-    "image":
-        "https://wallpapers.com/images/featured/romance-pictures-9nus2ne9xefezvcs.jpg",
-    "icon": Icons.album,
-  },
-  {
-    "title": "Playlists",
-    "image":
-        "https://wallpapers.com/images/featured/romance-pictures-9nus2ne9xefezvcs.jpg",
-    "icon": Icons.queue_music,
-  },
-  {
-    "title": "Live Shows",
-    "image":
-        "https://wallpapers.com/images/featured/romance-pictures-9nus2ne9xefezvcs.jpg",
-    "icon": Icons.theater_comedy,
-  },
-];

@@ -20,6 +20,7 @@ class AuthService {
               "email": email,
               "name": name,
               "password": hashPassword(password),
+              "favorite": [],
             });
             return true;
           } catch (error) {
@@ -59,6 +60,7 @@ class AuthService {
         "email": user.user!.email,
         "name": user.user!.displayName,
         "password": "",
+        "favorite": [],
       });
       return user;
     } catch (error) {

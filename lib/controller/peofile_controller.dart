@@ -1,10 +1,9 @@
 import 'package:get/get.dart';
 
-class ProfileController extends GetxController{
-  RxMap<String, dynamic> profile = <String, dynamic>{}.obs;
+class ProfileController extends GetxController {
+  RxMap<dynamic, dynamic> profile = <dynamic, dynamic>{}.obs;
 
-  void setProfile(Map<String, dynamic> profileData){
+  void setProfile(Map<dynamic, dynamic> profileData) {
     profile.value = profileData;
   }
-
 }
